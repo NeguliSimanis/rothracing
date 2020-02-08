@@ -62,10 +62,10 @@ public class TileManager : MonoBehaviour
                 PlacePlayerAtStartOfPath(newTileCoordinates);
 
 
-            pathTilemap.SetTile(newTileCoordinates, newTile);
-            pathTiles.Add(newTile);
+            //pathTilemap.SetTile(newTileCoordinates, newTile);
+            //pathTiles.Add(newTile);
         }
-        SpawnFinishTile();
+        //SpawnFinishTile();
     }
 
     //private int GetNextYCoordinate()
@@ -127,9 +127,6 @@ public class TileManager : MonoBehaviour
         Vector3Int tileGridLocation = gridLayout.WorldToCell(playerTransform.position);
         if (lastCollectedTileCoordinates == null || lastCollectedTileCoordinates != tileGridLocation)
         {
-            Debug.Log("player loc " + playerTransform);
-            Debug.Log("tile grid location " + tileGridLocation);
-
             if (pathTilemap.GetTile(tileGridLocation) != null)
             {
                 tilesNotCollected--;

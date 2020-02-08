@@ -6,12 +6,19 @@ using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
+    [SerializeField]
+    bool skipCountdown = true;
+        
     public static GameManager instance;
     [HideInInspector]
     public GameState currentGameState;
     private RaceManager raceManager;
     private TileManager tileManager;
     private AudioManager audioManager;
+
+    [Header("BALANCE")]
+    public float minNewEnemySpawnDelay;
+    public float maxNewEnemySpawnDelay;
 
     [Header("UI")]
     [SerializeField]
@@ -23,11 +30,37 @@ public class GameManager : MonoBehaviour
     [SerializeField]
     private GameObject mainMenuObject;
 
+    #region HUD
     [Header("HUD")]
     [SerializeField]
     private Text raceCountDownText;
     [SerializeField]
     private Text remainingPathTiles;
+    [SerializeField]
+    private Image healthBar;
+
+    [Header("HUD - CANNON")]
+    [SerializeField]
+    private GameObject ammoIcon;
+    [SerializeField]
+    private Transform ammoIconParent;
+    private List<GameObject> ammoIcons = new List<GameObject>();
+
+    [Header("HUD - HP")]
+    [SerializeField]
+    private GameObject hpIcon;
+    [SerializeField]
+    private Transform hpIconParent;
+    private List<GameObject> hpIcons = new List<GameObject>();
+
+    [Header("HUD - RUM")]
+    [SerializeField]
+    private GameObject rumIcon;
+    [SerializeField]
+    private Transform rumIconParent;
+    private List<GameObject> rumIcons = new List<GameObject>();
+    #endregion
+
 
     public Vector3 finishLineCoordinates;
 
@@ -76,7 +109,10 @@ public class GameManager : MonoBehaviour
     {
         if (Input.anyKey && currentGameState == GameState.MainMenu)
         {
-            StartCoroutine(StartRaceCountdown());
+            //if (!skipCountdown)
+            //   // StartCoroutine(StartRaceCountdown());
+            //else
+                SkipCountdown();
         }
         if (currentGameState == GameState.GameOver && !allowRestartingCouroutineActive)
         {
@@ -107,61 +143,40 @@ public class GameManager : MonoBehaviour
         raceCountDownText.gameObject.SetActive(false);
     }
 
-    private IEnumerator StartRaceCountdown()
+    //private IEnumerator StartRaceCountdown()
+    //{
+    //    currentGameState = GameState.StartingRace;
+    //    OpenMainMenu(false);
+    //    raceManager.InitializeRace();
+    //    raceCountDownText.gameObject.SetActive(true);
+    //    raceCountDownText.text = "3";
+    //    yield return new WaitForSeconds(1);
+    //    raceCountDownText.text = "2";
+    //    yield return new WaitForSeconds(1);
+    //    raceCountDownText.text = "1";
+    //    yield return new WaitForSeconds(1);
+    //    audioManager.PlaySeaShanty();
+    //    raceCountDownText.text = "GO!";
+    //    currentGameState = GameState.Racing;
+    //    yield return new WaitForSeconds(1f);
+    //    raceCountDownText.gameObject.SetActive(false);
+    //}
+
+    private void SkipCountdown()
     {
         currentGameState = GameState.StartingRace;
         OpenMainMenu(false);
         raceManager.InitializeRace();
-        raceCountDownText.gameObject.SetActive(true);
-        raceCountDownText.text = "3";
-        yield return new WaitForSeconds(1);
-        raceCountDownText.text = "2";
-        yield return new WaitForSeconds(1);
-        raceCountDownText.text = "1";
-        yield return new WaitForSeconds(1);
         audioManager.PlaySeaShanty();
         raceCountDownText.text = "GO!";
         currentGameState = GameState.Racing;
-        yield return new WaitForSeconds(1f);
         raceCountDownText.gameObject.SetActive(false);
-       
-
-    }
-
-    private void OpenMainMenu(bool open)
-    {
-        if (!open)
-        {
-            mainMenuObject.SetActive(false);
-        }
     }
 
     public void ShowGameResults()
     {
         gameResultsPanel.SetActive(true);
         currentGameState = GameState.GameOver;
-
-        int particapantsToDisplay = raceManager.raceParticipants.Count;
-        int nextRankToDisplay = 1;
-
-        while (particapantsToDisplay > 0)
-        {
-            foreach (Racer racer in raceManager.raceParticipants)
-            {
-                if (racer.raceRank == nextRankToDisplay)
-                {
-                    particapantsToDisplay--;
-                    nextRankToDisplay++;
-
-                    GameObject newParticipantInfo = Instantiate(racerResultWidget, racerResultWidgetContainer.transform);
-                    ParticipantResult newParticpantResult = newParticipantInfo.GetComponent<ParticipantResult>();
-                    newParticpantResult.racerRank.text = racer.raceRank.ToString();
-                    newParticpantResult.racerName.text = racer.name;
-                    newParticpantResult.racerTime.text = racer.raceFinishTime.ToString();
-                }
-                
-            }
-        }
     }
 
     public void RestartGame()
@@ -180,4 +195,57 @@ public class GameManager : MonoBehaviour
         if (isPlayer)
             PlayerData.instance.canMove = false;
     }
+
+    #region UI METHODS
+    private void OpenMainMenu(bool open)
+    {
+        if (!open)
+        {
+            mainMenuObject.SetActive(false);
+        }
+    }
+
+    public void UpdatePlayerLifeHUD()
+    {
+        int currentIconCount = hpIconParent.childCount;
+        if (PlayerData.instance.currLife > currentIconCount)
+        {
+            int missingIcons = PlayerData.instance.currLife - currentIconCount;
+            for (int i = 0; i < missingIcons; i++)
+            {
+                Instantiate(hpIcon, hpIconParent);
+            }
+        }
+        else
+        {
+            int surplusIcons = currentIconCount - PlayerData.instance.currLife;
+            for (int i = 0; i < surplusIcons; i++)
+            {
+                Destroy(hpIconParent.transform.GetChild(0).gameObject);
+            }
+        }
+    }
+
+    public void UpdatePlayerAmmoHUD()
+    {
+        int currentIconCount = ammoIconParent.childCount;
+        if (PlayerData.instance.currAmmo > currentIconCount)
+        {
+            int missingIcons = PlayerData.instance.currAmmo - currentIconCount;
+            for (int i = 0; i < missingIcons; i++)
+            {
+                Instantiate(ammoIcon, ammoIconParent);
+            }
+        }
+        else
+        {
+            int surplusIcons = currentIconCount - PlayerData.instance.currAmmo;
+            for (int i = 0; i < surplusIcons; i++)
+            {
+                Destroy(ammoIconParent.transform.GetChild(0).gameObject);
+            }
+        }
+    }
+    #endregion
+
 }

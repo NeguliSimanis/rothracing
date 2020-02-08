@@ -9,6 +9,9 @@ public class Racer
     public string name;
     public float moveSpeed;
 
+    public int racerCurrentHP;
+    public int racerMaxHP;
+
     // RACE DATA
     public bool isAlive = true;
     public float raceFinishTime;
@@ -35,7 +38,8 @@ public class RaceManager : MonoBehaviour
     {
         "Cpt. Fairgraves",
         "Inquisitor Viril",
-        "Isaac Perandus"
+        "Isaac Perandus",
+        "Blackguard Deserter"
     };
 
     #region INITIALIZING RACE
@@ -45,10 +49,11 @@ public class RaceManager : MonoBehaviour
         RegisterPlayerInRace();
         for (int i = 0; i < enemySpawnLocations.Length; i++) 
         {
-            AddRandomRacer(enemySpawnLocations[i],i);
+            AddRandomRacer(enemySpawnLocations[i]);
         }
         participantCount = raceParticipants.Count;
         activeParticipants = participantCount;
+        StartCoroutine(ManageEnemySpawning());
     }
 
     private void RegisterPlayerInRace()
@@ -60,14 +65,17 @@ public class RaceManager : MonoBehaviour
         raceParticipants.Add(player);
     }
 
-    private void AddRandomRacer(Transform spawnLocation, int racerID)
+    private void AddRandomRacer(Transform spawnLocation)
     {
         Racer newRacer = new Racer();
-        newRacer.name = enemyNames[racerID];
         newRacer.moveSpeed = Random.Range(85f, 115f);
+        newRacer.racerMaxHP = 100;
+        newRacer.racerCurrentHP = newRacer.racerMaxHP;
         raceParticipants.Add(newRacer);
         GameObject newRacerObject = Instantiate(enemyBoat, spawnLocation);
-        newRacerObject.GetComponent<EnemyController>().InitializeEnemy(newRacer);
+        newRacerObject.transform.parent = null;
+        newRacerObject.transform.position = new Vector3(newRacerObject.transform.position.x, newRacerObject.transform.position.y, 0);
+        newRacerObject.GetComponent<EnemyController>().InitializeEnemy(newRacer, enemySpawnLocations);
     }
     #endregion
 
@@ -82,6 +90,15 @@ public class RaceManager : MonoBehaviour
             GameManager.instance.ShowGameResults();
     }
 
+
+
+    private IEnumerator ManageEnemySpawning()
+    {
+        yield return new WaitForSeconds(
+            Random.Range(GameManager.instance.minNewEnemySpawnDelay, GameManager.instance.maxNewEnemySpawnDelay));
+        AddRandomRacer(enemySpawnLocations[Random.Range(0, enemySpawnLocations.Length)]);
+        StartCoroutine(ManageEnemySpawning());
+    }
 
 }
 

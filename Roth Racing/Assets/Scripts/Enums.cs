@@ -13,3 +13,19 @@ public enum GameState
     StartingRace,
     Racing
 }
+
+public enum EnemyState
+{
+    Dying,
+    ChasingPlayer,
+    Patrolling,
+    AttackingPlayer,
+    AttackingCooldown
+}
+
+public enum PickupType
+{
+    Rum,
+    Ammo,
+    Life
+}
